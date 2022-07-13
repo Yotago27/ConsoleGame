@@ -2,190 +2,9 @@ using namespace std;
 #include <iostream>
 #include <stdlib.h>
 #include <vector>
-#include <cstring>
 #include <fstream>
+#include "item.h"
 
-
-
-////////////////
-//item classes//
-////////////////
-
-class Item {
-protected:
-    
-    int id = 0;
-    string name = "";
-    float weight = 0.0f;
-    int maxStack = 10;
-    int amount = 1;
-    float value = 0.0f;
-    
-public:
-
-    int getID() {
-        return id;
-    }
-
-    string getName() {
-        return name;
-    }
-
-    int getMaxStack() {
-        return maxStack;
-    }
-
-    int getAmount() {
-        return amount;
-    }
-
-    float getValue() {
-        return value;
-    }
-
-    float getWeight() {
-        return weight;
-    }
-
-    float getValueTotal() {
-        return value * static_cast<float>(amount);
-    }
-
-    float getWeightTotal() {
-        return weight * static_cast<float>(amount);
-    }
-
-    void setAmount(int _amount) {
-        amount = _amount;
-    }
-
-    
-
-public:
-
-    enum class itemTypes {
-        item,
-        equipment,
-        weapon,
-        armor,
-        helmet
-    };
-
-    itemTypes itemType;
-
-    
-
-    void setItemType(itemTypes _itemType) {
-        itemType = _itemType;
-    }
-    itemTypes getItemType() {
-        return itemType;
-    }
-    string getItemTypeString() {
-        string ret = "error";
-        switch(itemType){
-        case itemTypes::item:
-            ret = "item";
-            break;
-        case itemTypes::equipment:
-            ret = "equipment";
-            break;
-        case itemTypes::weapon:
-            ret = "weapon";
-            break;
-        case itemTypes::armor:
-            ret = "armor";
-            break;
-        case itemTypes::helmet:
-            ret = "helmet";
-            break;
-        }
-        return ret;
-    }
-
-    Item(string _name, float _weight , float _value, int _maxStack) {
-
-        static int idCount;
-
-        itemType = itemTypes::item;
-
-        name = _name;
-        weight = _weight;
-        maxStack = _maxStack;
-        value = _value;
-
-
-        id = idCount;
-        idCount += 1;
-    }
-
-    void printInfo() {
-        cout << "  name: " << name << " : " << amount << "/" << maxStack << endl;
-        cout << "  id: " << id << endl;
-        cout << "  weight single: " << weight << "/total: " << getWeightTotal() << endl;
-        cout << "  value single: " << value << "/total: " << getValueTotal() << endl;
-        //cout << " max stack: " << maxStack << endl;
-        //cout << " amount: " << amount << endl;
-
-    }
-};
-
-class Equipment : public Item {
-public:
-
-
-
-    Equipment(string _name, float _weight, float _value, int _maxStack) : Item(_name, _weight, _value, _maxStack) {
-        setItemType(itemTypes::equipment);
-    }
-};
-
-
-//weapon classes
-
-class Weapon : public Equipment {
-public:
-
-    float damageSharp = 0.0f;
-    float damageBlunt = 0.0f;
-    float damageFire = 0.0f;
-    float damageFreeze = 0.0f;
-    float damageElectric = 0.0f;
-    float damagePoison = 0.0f;
-    float damageMagic = 0.0f;
-
-    Weapon(string _name, float _weight, float _value, int _maxStack) : Equipment(_name, _weight, _value, _maxStack) {
-        setItemType(itemTypes::weapon);
-    }
-};
-
-//armor item classes
-
-class Armor : public Equipment {
-public:
-
-    float defenceSharp = 0.0f;
-    float defenceBlunt = 0.0f;
-    float defenceFire = 0.0f;
-    float defenceFreeze = 0.0f;
-    float defenceElectric = 0.0f;
-    float defencePoison = 0.0f;
-    float defenceMagic = 0.0f;
-
-    Armor(string _name, float _weight, float _value, int _maxStack) : Equipment(_name, _weight, _value, _maxStack) {
-        setItemType(itemTypes::armor);
-    }
-};
-
-class Helmet : public Armor {
-public:
-
-
-
-    Helmet(string _name, float _weight, float _value, int _maxStack) : Armor(_name, _weight, _value, _maxStack) {
-        setItemType(itemTypes::helmet);
-    }
-};
 
 
 
@@ -195,10 +14,13 @@ public:
     
 
     //for sort function
-    int sortTypeName = 0;
-    int sortTypeValue = 1;
-    int sortTypeID = 2;
-    int sortTypeWeight = 3;
+    enum class sortTypes {
+        nameAZ,
+        nameZA,
+        value,
+        id,
+        weight
+    };
 
     vector<Item> inventory;
 
@@ -276,26 +98,42 @@ public:
         return inventory.size();
     }
 
-    void sort(int _sortType) {
-        //uses sortTypeName/sortTypeValue/sortTypeID as input
+    void sort(sortTypes _sortType) {
+        //uses sortTypes as input
 
         for (unsigned int x = 0; x < inventory.size(); x++) {
             for (unsigned int y = 0; y < ((inventory.size() - x) - 1); y++) {
                 float compareVal1 = 0.0f;
                 float compareVal2 = 0.0f;
-                if (_sortType == sortTypeID) {
+                if (_sortType == sortTypes::id) {
                     compareVal1 = float(getItem(y).getID());
                     compareVal2 = float(getItem(y + 1).getID());
                 }
-                if (_sortType == sortTypeName) {
-                    compareVal1 = float(getItem(y).getName()[0]);
-                    compareVal2 = float(getItem(y + 1).getName()[0]);
+                if (_sortType == sortTypes::nameAZ) {
+                    unsigned int i = 0;
+                    while(compareVal1 == compareVal2 && i < getItem(y).getName().length()){
+                        //swapped compareVal1 and compareVal2 for AZ
+                        compareVal2 = float(getItem(y).getName()[i]);
+                        compareVal1 = float(getItem(y + 1).getName()[i]);
+                        i++;
+                    }
+                    
                 }
-                if (_sortType == sortTypeValue) {
+                if (_sortType == sortTypes::nameZA) {
+                    unsigned int i = 0;
+                    while (compareVal1 == compareVal2 && i < getItem(y).getName().length()) {
+                        //swapped compareVal1 and compareVal2 for AZ
+                        compareVal1 = float(getItem(y).getName()[i]);
+                        compareVal2 = float(getItem(y + 1).getName()[i]);
+                        i++;
+                    }
+
+                }
+                if (_sortType == sortTypes::value) {
                     compareVal1 = getItem(y).getValueTotal();
                     compareVal2 = getItem(y + 1).getValueTotal();
                 }
-                if (_sortType == sortTypeWeight) {
+                if (_sortType == sortTypes::weight) {
                     compareVal1 = getItem(y).getWeightTotal();
                     compareVal2 = getItem(y + 1).getWeightTotal();
                 }
@@ -305,6 +143,7 @@ public:
                     replaceItem(getItem(y),y + 1);
                     replaceItem(temp, y);
                 }
+                
 
             }
         }
@@ -321,7 +160,7 @@ public:
 
     void print() {
         for (unsigned int i = 0; i < inventory.size(); i++) {
-            cout << i << ")" << endl;
+            cout << (i + 1) << ")" << endl;
             getItem(i).printInfo();
             cout << endl;
         }
@@ -402,7 +241,7 @@ protected:
 
                 //cout << inv.getItem(_inventoryIndex).getItemTypeString() << endl;
 
-                if (inv.getItem(_inventoryIndex).getItemType() == Item::itemTypes::weapon) {
+                if (inv.getItem(_inventoryIndex).isWeapon == true) {
                     equippedWeapon = _inventoryIndex;
                     ableToEquip = true;
                 }
@@ -435,6 +274,7 @@ public:
 
     //seperate from try for output text
     bool equipWeapon(int _inventoryIndex) {
+        _inventoryIndex -= 1;
         bool ableToEquip = tryEquipWeapon(_inventoryIndex);
         if (ableToEquip == true) {
             cout << "Equipped weapon " << inv.getItem(_inventoryIndex).getName() << endl;
@@ -493,9 +333,10 @@ int main()
 
     player.equipWeapon(5);
 
-    player.inv.sort(player.inv.sortTypeWeight);
+    player.inv.sort(Inventory::sortTypes::nameAZ);
 
     player.inv.print();
+
     cout << player.inv.totalWeight();
     
 }
