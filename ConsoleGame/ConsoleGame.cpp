@@ -5,7 +5,7 @@ using namespace std;
 #include <fstream>
 #include "item.h"
 
-
+int lol;
 
 
 class Inventory {
